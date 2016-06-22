@@ -50,7 +50,7 @@ var um = (function() {
 
   var loop = function() {
     step();
-    if (!power) { return; }
+    //if (!power) { return; }
     animationFrame = requestAnimationFrame(loop);
   };
 
@@ -139,12 +139,14 @@ var um = (function() {
         break;
 
       case 11: // input
+        console.log('input...');
         break;
 
       case 12: // load program
         var idx = registers[b];
-        var arr = mem[idx].slice(0);
-        mem[0] = arr;
+        //var arr = mem[idx].slice(0);
+        //mem[0] = arr;
+        mem[0].set(mem[idx]);
         pc = registers[c];
         break;
 
@@ -159,14 +161,19 @@ var um = (function() {
         console.log('unknown', op);
         return false
 
-    }
+      }
+
+    };
+
+    var getPower = function() {
+      return power;
   };
 
 
   return {
     powerOn: powerOn,
     step: step,
-    power: power,
+    getPower: getPower,
     loop: loop,
     powerOff: powerOff
   };
