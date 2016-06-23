@@ -23,7 +23,9 @@ var um = (function() {
   var pc = 0;
 
   // 8 Registers
-  var registers = [0, 0, 0, 0, 0, 0, 0, 0];
+  var registerBuffer = new ArrayBuffer(8 * 4);
+  var registers = new Uint32Array(registerBuffer);
+  //var registers = [0, 0, 0, 0, 0, 0, 0, 0];
 
   // Memory
   var mem = [];
@@ -50,7 +52,7 @@ var um = (function() {
 
   var loop = function() {
     step();
-    //if (!power) { return; }
+    if (!power) { return; }
     animationFrame = requestAnimationFrame(loop);
   };
 
@@ -70,9 +72,8 @@ var um = (function() {
     switch(op >>> 28) {
       // Standard Ops
       case 0: // conditional move
-        if (registers[c]) {
+        if (registers[c] === 0) { return; }
           registers[a] = registers[b];
-        }
         break;
 
       case 1: // array index
@@ -88,22 +89,22 @@ var um = (function() {
         break;
 
       case 3: // addition
-        var value = (registers[b] + registers[c]) >>> 0;
+        var value = registers[b] + registers[c];
         registers[a] = value;
         break;
 
       case 4: // multiplication 
-        var value = (registers[b] * registers[c]) >>> 0;
+        var value = registers[b] * registers[c];
         registers[a] = value;
         break;
 
       case 5: // division 
-        var value = (registers[b] / registers[c]) >>> 0;
+        var value = registers[b] / registers[c];
         registers[a] = value;
         break;
 
       case 6: // not and
-        var value = ~(registers[b] & registers[c]) >>> 0;
+        var value = ~(registers[b] & registers[c]);
         registers[a] = value;
         break;
 
@@ -121,7 +122,8 @@ var um = (function() {
           mem[idx] = malloc;
           registers[b] = idx;
         } else {
-          mem.push(malloc);
+          //mem.push(malloc);
+          mem[mallocIdx] = malloc;
           registers[b] = mallocIdx;
           mallocIdx += 1;
         }
@@ -146,7 +148,8 @@ var um = (function() {
         var idx = registers[b];
         //var arr = mem[idx].slice(0);
         //mem[0] = arr;
-        mem[0].set(mem[idx]);
+        //mem[0].set(mem[idx]);
+        mem[0] = Uint32Array.from(mem[idx]);
         pc = registers[c];
         break;
 
