@@ -10,7 +10,7 @@ fileEl.addEventListener('change', function(e) {
     var file = new Uint8Array(reader.result);
     um.powerOn(file);
   });
-  
+
   reader.readAsArrayBuffer(f);
 }, false);
 
@@ -25,11 +25,10 @@ var um = (function() {
   // 8 Registers
   var registerBuffer = new ArrayBuffer(8 * 4);
   var registers = new Uint32Array(registerBuffer);
-  //var registers = [0, 0, 0, 0, 0, 0, 0, 0];
 
   // Memory
   var mem = [];
-  var mallocIdx = 1;
+  var mallocIdx = 0;
   var mallocArr = [];
 
   var powerOn = function powerOn(file) {
@@ -43,11 +42,12 @@ var um = (function() {
       var b4 = file[i + 3];
       malloc[idx] = b1 | b2 | b3 | b4;
     }
- 
+
     console.log('Start:', new Date());
     mem.push(malloc);
     power = true;
-    loop();
+    //loop();
+    looper();
   };
 
   var loop = function() {
@@ -56,24 +56,41 @@ var um = (function() {
     animationFrame = requestAnimationFrame(loop);
   };
 
+  var looper = function() {
+    animationFrame = setInterval(main, 0);
+  };
+
+  var main = function() {
+    console.log('main!');
+    var x = 0;
+    while(x < 10000) {
+      step();
+      x++
+    };
+  };
+
   var powerOff = function() {
     console.log('power off');
     power = false;
+    clearInterval(animationFrame);
   };
 
   var step = function step() {
     var op = mem[0][pc];
-    var a = (op >>> 6) & 7;
-    var b = (op >>> 3) & 7;
-    var c =  op        & 7;
+    var a = (op >>> 6) & 0x7;
+    var b = (op >>> 3) & 0x7;
+    var c =  op        & 0x7;
+
+    //console.log(op >>> 28, a, b, c);
 
     pc += 1;
 
     switch(op >>> 28) {
       // Standard Ops
       case 0: // conditional move
-        if (registers[c] === 0) { return; }
+        if (registers[c] !== 0) {
           registers[a] = registers[b];
+        }
         break;
 
       case 1: // array index
@@ -93,12 +110,12 @@ var um = (function() {
         registers[a] = value;
         break;
 
-      case 4: // multiplication 
+      case 4: // multiplication
         var value = registers[b] * registers[c];
         registers[a] = value;
         break;
 
-      case 5: // division 
+      case 5: // division
         var value = registers[b] / registers[c];
         registers[a] = value;
         break;
@@ -122,14 +139,14 @@ var um = (function() {
           mem[idx] = malloc;
           registers[b] = idx;
         } else {
-          //mem.push(malloc);
-          mem[mallocIdx] = malloc;
-          registers[b] = mallocIdx;
           mallocIdx += 1;
+          //mem[mallocIdx] = malloc;
+          mem.push(malloc);
+          registers[b] = mallocIdx;
         }
         break;
 
-      case 9: // abondonment
+      case 9: // abandonment
         var idx = registers[c];
         mem[idx] = [];
         mallocArr.push(idx);
@@ -146,16 +163,14 @@ var um = (function() {
 
       case 12: // load program
         var idx = registers[b];
-        //var arr = mem[idx].slice(0);
-        //mem[0] = arr;
-        //mem[0].set(mem[idx]);
-        mem[0] = Uint32Array.from(mem[idx]);
+        var program = Uint32Array.from(mem[idx]);
+        mem[0] = program;
         pc = registers[c];
         break;
 
       case 13:
         a = (op >>> 25) & 0x7;
-        var value = op & 0x1FFFFFF;
+        var value = op & 0x01FFFFFF;
         registers[a] = value;
         break;
 

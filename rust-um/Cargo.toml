@@ -1,0 +1,6 @@
+[package]
+name = "rust-um"
+version = "0.1.0"
+authors = ["Alex Pate <proto.merkabah@gmail.com>"]
+
+[dependencies]

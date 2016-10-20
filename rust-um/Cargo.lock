@@ -1,0 +1,4 @@
+[root]
+name = "rust-um"
+version = "0.1.0"
+
