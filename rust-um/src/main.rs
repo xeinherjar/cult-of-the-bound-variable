@@ -6,7 +6,10 @@ fn main() {
         power: true,
         pc: 0,
         registers: vec![0; 8],
-        platters: vec![open_scroll()]
+        platters: vec![open_scroll()],
+        memory_index_next: 0,
+        memory_index_available: vec![],
+
     };
 
     loop {
@@ -19,11 +22,16 @@ fn main() {
         println!("um registers, {:?}, pc {:?}", um.registers, um.pc);
         match opcode {
             0 => um.conditional_move(reg_a, reg_b, reg_c),
+            1 => um.array_index(reg_a, reg_b, reg_c),
+            2 => um.array_amendment(reg_a, reg_b, reg_c),
             3 => um.addition(reg_a, reg_b, reg_c),
             4 => um.multiplication(reg_a, reg_b, reg_c),
             5 => um.division(reg_a, reg_b, reg_c),
             6 => um.not_and(reg_a, reg_b, reg_c),
             7 => break,
+            8 => um.allocation(reg_b, reg_c),
+            9 => um.abandonment(reg_c),
+            10 => um.output(reg_c),
             12 => um.load_program(reg_b, reg_c),
             13 => um.orthography(instr),
             _ => {
@@ -69,13 +77,13 @@ struct UM {
     power: bool,
     pc: usize,
     registers: Vec<u32>,
-    platters: Vec<Vec<u32>>
+    platters: Vec<Vec<u32>>,
+    memory_index_next: u32,
+    memory_index_available: Vec<u32>,
 }
 
 impl UM {
     fn step(&mut self) -> u32 {
-        // Fetch, Decode, Execute
-
         let instruction = self.platters[0][self.pc];
         self.pc = self.pc + 1;
 
@@ -86,15 +94,18 @@ impl UM {
         if self.registers[c] != 0 {
             self.registers[a] = self.registers[b];
         }
-
     }
 
-    fn array_index(&mut self) {
-
+    fn array_index(&mut self, a: usize, b: usize, c: usize) {
+        let index = self.registers[b] as usize;
+        let offset = self.registers[c] as usize;
+        self.registers[a] = self.platters[index][offset];
     }
 
-    fn array_amendment(&mut self) {
-
+    fn array_amendment(&mut self, a: usize, b: usize, c: usize) {
+        let index = self.registers[a] as usize;
+        let offset = self.registers[b] as usize;
+        self.platters[index][offset] = self.registers[c];
     }
 
     fn addition(&mut self, a: usize, b: usize, c: usize) {
@@ -118,15 +129,33 @@ impl UM {
         self.power = false;
     }
 
-    fn allocation() {
+    fn allocation(&mut self, b: usize, c: usize) {
+        let new_platter: Vec<u32> = vec![0; self.registers[c] as usize];
+        if self.memory_index_available.len() == 0 {
+            self.memory_index_next = self.memory_index_next + 1;
+            self.platters.push(new_platter);
+            self.registers[b] = self.memory_index_next;
+        } else {
+            let index = match self.memory_index_available.pop() {
+                Some(index) => index,
+                None => panic!("Whoa, how did this fail.....")
+            };
+            self.platters[index as usize] = new_platter;
+            self.registers[b] = index as u32;
+        }
 
     }
 
-    fn abandonment() {
-
+    fn abandonment(&mut self, c: usize) {
+        let index = self.registers[c];
+        self.platters[index as usize] = vec![];
+        self.memory_index_available.push(index);
     }
 
-    fn output() {
+    fn output(&mut self, c: usize) {
+        let glyph = (self.registers[c] & 0xFF) as u8;
+        let glyph = glyph as char;
+        print!("{}", glyph);
 
     }
 
@@ -137,15 +166,14 @@ impl UM {
     fn load_program(&mut self, b: usize, c: usize) {
         let index = self.registers[b] as usize;
         let platter_data = self.platters[index].clone();
-        self.platters[index] = platter_data;
+        self.platters[0] = platter_data;
         self.pc = self.registers[c] as usize;
 
     }
 
     fn orthography(&mut self, instr: u32) {
-        let reg_a = (instr as usize >> 25) & 0x7;
-        self.registers[reg_a] = instr & 0x1FF_FFFF
-
+        let reg_a = (instr >> 25) & 0x7;
+        self.registers[reg_a as usize] = instr & 0x01FF_FFFF;
     }
 
 }
