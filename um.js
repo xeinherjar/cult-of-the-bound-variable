@@ -177,7 +177,7 @@ var um = (function() {
       default:
         power = false;
         console.log('unknown', op);
-        return false
+        return false;
 
       }
 
