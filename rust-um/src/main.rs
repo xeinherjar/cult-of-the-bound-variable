@@ -3,9 +3,8 @@ use std::io::{ Read };
 
 fn main() {
     let mut um = UM {
-        power: true,
         pc: 0,
-        registers: vec![0; 8],
+        registers: [0, 0, 0, 0, 0, 0, 0, 0],
         platters: vec![open_scroll()],
         memory_index_next: 0,
         memory_index_available: vec![],
@@ -19,7 +18,6 @@ fn main() {
         let reg_b  = ((instr >> 3) & 0x7) as usize;
         let reg_c  = (instr        & 0x7) as usize;
 
-        println!("um registers, {:?}, pc {:?}", um.registers, um.pc);
         match opcode {
             0 => um.conditional_move(reg_a, reg_b, reg_c),
             1 => um.array_index(reg_a, reg_b, reg_c),
@@ -47,7 +45,8 @@ fn main() {
 }
 
 fn open_scroll() -> Vec<u32> {
-    let mut file = match File::open("../codex.umz") {
+    //let mut file = match File::open("../codex.umz") {
+    let mut file = match File::open("../sandmark.umz") {
         Ok(file) => file,
         Err(_)  => panic!("Failed to open file"),
     };
@@ -74,9 +73,8 @@ fn open_scroll() -> Vec<u32> {
 
 #[derive(Debug)]
 struct UM {
-    power: bool,
-    pc: usize,
-    registers: Vec<u32>,
+    pc: u32,
+    registers: [u32; 8],
     platters: Vec<Vec<u32>>,
     memory_index_next: u32,
     memory_index_available: Vec<u32>,
@@ -84,7 +82,7 @@ struct UM {
 
 impl UM {
     fn step(&mut self) -> u32 {
-        let instruction = self.platters[0][self.pc];
+        let instruction = self.platters[0][self.pc as usize];
         self.pc = self.pc + 1;
 
         instruction
@@ -125,9 +123,10 @@ impl UM {
         self.registers[a] = value;
     }
 
+    /*
     fn halt(&mut self) {
-        self.power = false;
     }
+    */
 
     fn allocation(&mut self, b: usize, c: usize) {
         let new_platter: Vec<u32> = vec![0; self.registers[c] as usize];
@@ -141,7 +140,7 @@ impl UM {
                 None => panic!("Whoa, how did this fail.....")
             };
             self.platters[index as usize] = new_platter;
-            self.registers[b] = index as u32;
+            self.registers[b] = index;
         }
 
     }
@@ -156,7 +155,6 @@ impl UM {
         let glyph = (self.registers[c] & 0xFF) as u8;
         let glyph = glyph as char;
         print!("{}", glyph);
-
     }
 
     fn input() {
@@ -164,16 +162,14 @@ impl UM {
     }
 
     fn load_program(&mut self, b: usize, c: usize) {
-        let index = self.registers[b] as usize;
-        let platter_data = self.platters[index].clone();
-        self.platters[0] = platter_data;
-        self.pc = self.registers[c] as usize;
-
+        let index = self.registers[b];
+        self.platters[0] = self.platters[index as usize].clone();
+        self.pc = self.registers[c];
     }
 
     fn orthography(&mut self, instr: u32) {
         let reg_a = (instr >> 25) & 0x7;
-        self.registers[reg_a as usize] = instr & 0x01FF_FFFF;
+        self.registers[reg_a as usize] = instr & 0x1FF_FFFF;
     }
 
 }
