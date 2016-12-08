@@ -173,8 +173,9 @@ class um:
         The '0' array shall be the most sublime choice for
         loading, and shall be handled with the utmost velocity"""
         idx = self.registers[reg_b]
-        arr = list(self.mem[idx])
-        self.mem[0] = arr
+        if (idx != 0):
+            arr = list(self.mem[idx])
+            self.mem[0] = arr
         self.pc = self.registers[reg_c]
         return
 

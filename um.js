@@ -61,12 +61,11 @@ var um = (function() {
   };
 
   var main = function() {
-    console.log('main!');
     var x = 0;
     while(x < 10000) {
       step();
-      x++
-    };
+      x++;
+    }
   };
 
   var powerOff = function() {
@@ -163,8 +162,10 @@ var um = (function() {
 
       case 12: // load program
         var idx = registers[b];
-        var program = Uint32Array.from(mem[idx]);
-        mem[0] = program;
+        if (idx !== 0) {
+          var program = Uint32Array.from(mem[idx]);
+          mem[0] = program;
+        }
         pc = registers[c];
         break;
 
