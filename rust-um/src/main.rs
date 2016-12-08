@@ -45,7 +45,6 @@ fn main() {
 }
 
 fn open_scroll() -> Vec<u32> {
-    //let mut file = match File::open("./test2") {
     let mut file = match File::open("../codex.umz") {
     //let mut file = match File::open("../sandmark.umz") {
         Ok(file) => file,
