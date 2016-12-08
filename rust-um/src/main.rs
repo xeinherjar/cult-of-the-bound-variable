@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::io::{ Read };
+use std::io::{ Read, stdin };
 
 fn main() {
     let mut um = UM {
@@ -8,7 +8,6 @@ fn main() {
         platters: vec![open_scroll()],
         memory_index_next: 0,
         memory_index_available: vec![],
-
     };
 
     loop {
@@ -30,6 +29,7 @@ fn main() {
             8 => um.allocation(reg_b, reg_c),
             9 => um.abandonment(reg_c),
             10 => um.output(reg_c),
+            11 => um.input(reg_c),
             12 => um.load_program(reg_b, reg_c),
             13 => um.orthography(instr),
             _ => {
@@ -45,8 +45,9 @@ fn main() {
 }
 
 fn open_scroll() -> Vec<u32> {
-    //let mut file = match File::open("../codex.umz") {
-    let mut file = match File::open("../sandmark.umz") {
+    //let mut file = match File::open("./test2") {
+    let mut file = match File::open("../codex.umz") {
+    //let mut file = match File::open("../sandmark.umz") {
         Ok(file) => file,
         Err(_)  => panic!("Failed to open file"),
     };
@@ -157,13 +158,23 @@ impl UM {
         print!("{}", glyph);
     }
 
-    fn input() {
-
+    fn input(&mut self, c: usize) {
+        for byte in stdin().bytes() {
+            match byte {
+                Ok(byte) => {
+                    self.registers[c] = (byte & 0xFF) as u32;
+                    break;
+                },
+                Err(_) => panic!("Error reading from stdin")
+            }
+        }
     }
 
     fn load_program(&mut self, b: usize, c: usize) {
         let index = self.registers[b];
-        self.platters[0] = self.platters[index as usize].clone();
+        if index != 0 {
+            self.platters[0] = self.platters[index as usize].clone();
+        }
         self.pc = self.registers[c];
     }
 
